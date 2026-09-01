@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="基于GPR模型的硫自养体系Cr(VI)去除率科研预测工具">
+  <title>Cr(VI) 去除率预测器</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand-mark" aria-hidden="true"><span>Cr</span><sup>VI</sup></div>
+    <div class="masthead-copy">
+      <p class="eyebrow">Sulfur-autotrophic reduction · Research model</p>
+      <h1>Cr(VI) 去除率预测器</h1>
+      <p>输入反应条件和时间，计算当前GPR模型给出的六价铬去除率。</p>
+    </div>
+    <div class="local-badge"><span></span>本地计算，不上传数据</div>
+  </header>
+
+  <main class="page-shell">
+    <section class="input-panel" aria-labelledby="input-title">
+      <div class="section-heading">
+        <p class="section-index">INPUT / 01</p>
+        <h2 id="input-title">设置反应条件</h2>
+        <p>滑块和数值框同步更新。接种量按体积分数百分比输入，可进行扩展条件下的探索性预测。</p>
+      </div>
+
+      <form id="prediction-form" novalidate>
+        <div class="field" data-feature="time">
+          <div class="field-head"><label for="time-number">反应时间</label><span>h</span></div>
+          <div class="field-controls">
+            <input id="time-range" type="range" min="0" max="240" step="1" value="48">
+            <input id="time-number" type="number" min="0" max="240" step="1" value="48" inputmode="decimal">
+          </div>
+          <div class="range-note"><span>0</span><span>探索设置范围</span><span>240</span></div>
+        </div>
+
+        <div class="field" data-feature="inoculum">
+          <div class="field-head"><label for="inoculum-number">接种量</label><span>% (v/v)</span></div>
+          <div class="field-controls">
+            <input id="inoculum-range" type="range" min="1" max="20" step="0.5" value="10">
+            <input id="inoculum-number" type="number" min="1" max="20" step="0.5" value="10" inputmode="decimal">
+          </div>
+          <div class="range-note"><span>1</span><span>探索设置范围</span><span>20</span></div>
+        </div>
+
+        <div class="field" data-feature="initial_cr">
+          <div class="field-head"><label for="initial-cr-number">初始 Cr(VI)</label><span>mg/L</span></div>
+          <div class="field-controls">
+            <input id="initial-cr-range" type="range" min="0.1" max="100" step="0.1" value="10">
+            <input id="initial-cr-number" type="number" min="0.1" max="100" step="0.1" value="10" inputmode="decimal">
+          </div>
+          <div class="range-note"><span>0.1</span><span>探索设置范围</span><span>100</span></div>
+        </div>
+
+        <div class="field" data-feature="temperature">
+          <div class="field-head"><label for="temperature-number">温度</label><span>°C</span></div>
+          <div class="field-controls">
+            <input id="temperature-range" type="range" min="0" max="50" step="1" value="30">
+            <input id="temperature-number" type="number" min="0" max="50" step="1" value="30" inputmode="decimal">
+          </div>
+          <div class="range-note"><span>0</span><span>探索设置范围</span><span>50</span></div>
+        </div>
+
+        <div class="field" data-feature="sulfate">
+          <div class="field-head"><label for="sulfate-number">初始硫酸盐</label><span>mg/L</span></div>
+          <div class="field-controls">
+            <input id="sulfate-range" type="range" min="0" max="1000" step="10" value="0">
+            <input id="sulfate-number" type="number" min="0" max="1000" step="10" value="0" inputmode="decimal">
+          </div>
+          <div class="range-note"><span>0</span><span>探索设置范围</span><span>1000</span></div>
+        </div>
+
+        <div class="field" data-feature="nitrate">
+          <div class="field-head"><label for="nitrate-number">初始硝酸盐</label><span>mg/L</span></div>
+          <div class="field-controls">
+            <input id="nitrate-range" type="range" min="0" max="1000" step="10" value="0">
+            <input id="nitrate-number" type="number" min="0" max="1000" step="10" value="0" inputmode="decimal">
+          </div>
+          <div class="range-note"><span>0</span><span>探索设置范围</span><span>1000</span></div>
+        </div>
+
+        <p id="form-error" class="form-error" role="alert" hidden></p>
+        <div class="form-actions">
+          <button class="primary-action" type="submit">计算去除率</button>
+          <button id="reset-button" class="secondary-action" type="button">恢复基准条件</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="result-panel" aria-labelledby="result-title">
+      <div class="section-heading result-heading">
+        <div>
+          <p class="section-index">OUTPUT / 02</p>
+          <h2 id="result-title">模型预测</h2>
+        </div>
+      </div>
+
+      <div class="prediction-stage">
+        <div class="reactor-gauge" aria-label="预测去除率">
+          <svg viewBox="0 0 220 220" role="img" aria-labelledby="gauge-title gauge-desc">
+            <title id="gauge-title">预测Cr(VI)去除率</title>
+            <desc id="gauge-desc">圆环长度表示预测的去除百分比</desc>
+            <circle class="gauge-track" cx="110" cy="110" r="86"></circle>
+            <circle id="gauge-progress" class="gauge-progress" cx="110" cy="110" r="86"></circle>
+            <path class="gauge-vessel" d="M75 64h70M88 64v35l-24 67c-4 11 4 22 16 22h60c12 0 20-11 16-22l-24-67V64"></path>
+          </svg>
+          <div class="gauge-value"><strong id="prediction-percent">92.3%</strong><span>预测去除率</span></div>
+        </div>
+
+        <div class="prediction-readout">
+          <p class="readout-label">Predicted removal fraction</p>
+          <p id="prediction-fraction" class="fraction-value">0.923</p>
+          <div class="interval-block">
+            <span>GPR未校准预测范围（均值 ± 1.96σ）</span>
+            <strong id="prediction-interval">87.8% – 96.8%</strong>
+          </div>
+          <p class="interval-caveat">该范围表示模型内部不确定性；OOF覆盖率为76.7%，不是经过校准的95%置信区间。</p>
+        </div>
+      </div>
+
+      <section class="curve-card" aria-labelledby="curve-title">
+        <div class="card-head"><div><p class="section-index">KINETIC TRACE</p><h3 id="curve-title">预测时间轨迹</h3></div><span id="curve-condition">当前环境条件</span></div>
+        <svg id="curve-chart" viewBox="0 0 700 280" role="img" aria-label="当前环境条件下0到240小时的预测去除率轨迹"></svg>
+      </section>
+
+      <div class="model-strip" aria-label="模型性能摘要">
+        <div><span>OOF R²</span><strong>0.789</strong></div>
+        <div><span>条件等权 MAE</span><strong>0.077</strong></div>
+        <div><span>训练点</span><strong>172</strong></div>
+        <div><span>独立环境条件</span><strong>18</strong></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Cr(VI) removal research model · Version <span id="model-version">—</span></p>
+    <p>接种量按% (v/v)输入，网页自动换算为模型使用的体积分数。</p>
+  </footer>
+
+  <script src="model-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
