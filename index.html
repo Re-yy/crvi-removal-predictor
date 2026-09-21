@@ -13,7 +13,7 @@
     <div class="masthead-copy">
       <p class="eyebrow">Sulfur-autotrophic reduction · Research model</p>
       <h1>Cr(VI) 去除率预测器</h1>
-      <p>输入反应条件和时间，计算当前GPR模型给出的六价铬去除率。</p>
+      <p>输入六项反应条件，评估去除率、动力学终点与实验支持程度。</p>
     </div>
     <div class="local-badge"><span></span>本地计算，不上传数据</div>
   </header>
@@ -23,7 +23,7 @@
       <div class="section-heading">
         <p class="section-index">INPUT / 01</p>
         <h2 id="input-title">设置反应条件</h2>
-        <p>滑块和数值框同步更新。接种量按体积分数百分比输入，可进行扩展条件下的探索性预测。</p>
+        <p>接种量按体积分数百分比输入；超出训练范围或未实测组合会被单独标识。</p>
       </div>
 
       <form id="prediction-form" novalidate>
@@ -33,7 +33,7 @@
             <input id="time-range" type="range" min="0" max="240" step="1" value="48">
             <input id="time-number" type="number" min="0" max="240" step="1" value="48" inputmode="decimal">
           </div>
-          <div class="range-note"><span>0</span><span>探索设置范围</span><span>240</span></div>
+          <div class="range-note"><span>0</span><span>训练范围 0–144 h</span><span>240</span></div>
         </div>
 
         <div class="field" data-feature="inoculum">
@@ -42,7 +42,7 @@
             <input id="inoculum-range" type="range" min="1" max="20" step="0.5" value="10">
             <input id="inoculum-number" type="number" min="1" max="20" step="0.5" value="10" inputmode="decimal">
           </div>
-          <div class="range-note"><span>1</span><span>探索设置范围</span><span>20</span></div>
+          <div class="range-note"><span>1</span><span>训练范围 6%–12%</span><span>20</span></div>
         </div>
 
         <div class="field" data-feature="initial_cr">
@@ -51,7 +51,7 @@
             <input id="initial-cr-range" type="range" min="0.1" max="100" step="0.1" value="10">
             <input id="initial-cr-number" type="number" min="0.1" max="100" step="0.1" value="10" inputmode="decimal">
           </div>
-          <div class="range-note"><span>0.1</span><span>探索设置范围</span><span>100</span></div>
+          <div class="range-note"><span>0.1</span><span>训练范围 2–50 mg/L</span><span>100</span></div>
         </div>
 
         <div class="field" data-feature="temperature">
@@ -60,7 +60,7 @@
             <input id="temperature-range" type="range" min="0" max="50" step="1" value="30">
             <input id="temperature-number" type="number" min="0" max="50" step="1" value="30" inputmode="decimal">
           </div>
-          <div class="range-note"><span>0</span><span>探索设置范围</span><span>50</span></div>
+          <div class="range-note"><span>0</span><span>训练范围 4–40 °C</span><span>50</span></div>
         </div>
 
         <div class="field" data-feature="sulfate">
@@ -69,7 +69,7 @@
             <input id="sulfate-range" type="range" min="0" max="1000" step="10" value="0">
             <input id="sulfate-number" type="number" min="0" max="1000" step="10" value="0" inputmode="decimal">
           </div>
-          <div class="range-note"><span>0</span><span>探索设置范围</span><span>1000</span></div>
+          <div class="range-note"><span>0</span><span>训练范围 0–500 mg/L</span><span>1000</span></div>
         </div>
 
         <div class="field" data-feature="nitrate">
@@ -78,13 +78,14 @@
             <input id="nitrate-range" type="range" min="0" max="1000" step="10" value="0">
             <input id="nitrate-number" type="number" min="0" max="1000" step="10" value="0" inputmode="decimal">
           </div>
-          <div class="range-note"><span>0</span><span>探索设置范围</span><span>1000</span></div>
+          <div class="range-note"><span>0</span><span>训练范围 0–500 mg/L</span><span>1000</span></div>
         </div>
 
         <p id="form-error" class="form-error" role="alert" hidden></p>
         <div class="form-actions">
           <button class="primary-action" type="submit">计算去除率</button>
           <button id="reset-button" class="secondary-action" type="button">恢复基准条件</button>
+          <button id="download-button" class="secondary-action download-action" type="button">下载结果</button>
         </div>
       </form>
     </section>
@@ -117,26 +118,28 @@
             <strong id="prediction-interval">87.8% – 96.8%</strong>
           </div>
           <p class="interval-caveat">该范围表示模型内部不确定性；OOF覆盖率为76.7%，不是经过校准的95%置信区间。</p>
+          <div class="prediction-basis">
+            <span>原始 GPR</span><strong id="raw-prediction">92.3%</strong>
+            <span>页面显示</span><strong id="display-rule">累计最大值后处理</strong>
+          </div>
         </div>
       </div>
 
       <section class="curve-card" aria-labelledby="curve-title">
         <div class="card-head"><div><p class="section-index">KINETIC TRACE</p><h3 id="curve-title">预测时间轨迹</h3></div><span id="curve-condition">当前环境条件</span></div>
         <svg id="curve-chart" viewBox="0 0 700 280" role="img" aria-label="当前环境条件下0到240小时的预测去除率轨迹"></svg>
+        <div class="kinetic-summary" aria-label="动力学预测终点">
+          <div><span>达到 50%</span><strong id="t50-value">—</strong></div>
+          <div><span>达到 90%</span><strong id="t90-value">—</strong></div>
+          <p>阈值时间按1 h网格和累计最大值后处理计算；“未达到”表示在240 h探索窗口内未达到。</p>
+        </div>
       </section>
-
-      <div class="model-strip" aria-label="模型性能摘要">
-        <div><span>OOF R²</span><strong>0.789</strong></div>
-        <div><span>条件等权 MAE</span><strong>0.077</strong></div>
-        <div><span>训练点</span><strong>172</strong></div>
-        <div><span>独立环境条件</span><strong>18</strong></div>
-      </div>
     </section>
+
   </main>
 
   <footer>
     <p>Cr(VI) removal research model · Version <span id="model-version">—</span></p>
-    <p>接种量按% (v/v)输入，网页自动换算为模型使用的体积分数。</p>
   </footer>
 
   <script src="model-data.js"></script>
